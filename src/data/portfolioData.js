@@ -256,6 +256,93 @@ export const CONNECT_ICONS = {
   chat: "💬", msg: "📱", work: "💼", mail: "✉️", cal: "📅",
 };
 
+export const PILLARS = [
+  {
+    id: "student",
+    title: "Student",
+    cards: [
+      {
+        label: "Profile",
+        alt: "Student profile portrait",
+        src: "/gallery/profile_new_2.jpg",
+      },
+      {
+        label: "UNSW AI",
+        alt: "UNSW conference memory",
+        src: "/gallery/unsw5.jpg",
+      },
+      {
+        label: "Conference",
+        alt: "UNSW conference panel",
+        src: "/gallery/unsw4.jpg",
+      },
+    ],
+  },
+  {
+    id: "legal-thinker",
+    title: "Legal Thinker",
+    cards: [
+      {
+        label: "Mock Trial",
+        alt: "Mock trial team memory",
+        src: "/gallery/mocktrial.jpg",
+      },
+      {
+        label: "Books",
+        alt: "Books and study references",
+        src: "/gallery/books.jpg",
+      },
+      {
+        label: "Discipline",
+        alt: "Student conference reflection",
+        src: "/gallery/unsw1.jpg",
+      },
+    ],
+  },
+  {
+    id: "tech-builder",
+    title: "Tech Builder",
+    cards: [
+      {
+        label: "Robotics",
+        alt: "Robotics team visual",
+        src: "/gallery/Robotics.svg",
+      },
+      {
+        label: "Prototype",
+        alt: "Tech project showcase",
+        src: "https://framerusercontent.com/images/r7VdtDCVeFWj1oUwQ4bh75MXQk.jpg?scale-down-to=512&width=2048&height=1365",
+      },
+      {
+        label: "Build Loop",
+        alt: "Comp club learning memory",
+        src: "/gallery/compclub.jpg",
+      },
+    ],
+  },
+  {
+    id: "side-quest-operator",
+    title: "Side-Quest Operator",
+    cards: [
+      {
+        label: "Hangout 03",
+        alt: "Dromca hangout photo 3",
+        src: "/gallery/dromca%20(3).jpg",
+      },
+      {
+        label: "Hangout 05",
+        alt: "Dromca hangout photo 5",
+        src: "/gallery/dromca%20(5).jpg",
+      },
+      {
+        label: "Hangout 09",
+        alt: "Dromca hangout photo 9",
+        src: "/gallery/dromca%20(9).jpg",
+      },
+    ],
+  },
+];
+
 export const CMD_ITEMS = [
   { section: "Actions", label: "Print Resume", icon: "print", hotkey: "Ctrl+P", action: () => window.print() },
   { section: "Social",  label: "LinkedIn",     icon: "work",  hotkey: "Ctrl+L", action: () => window.open("https://linkedin.com/in/brain913","_blank") },

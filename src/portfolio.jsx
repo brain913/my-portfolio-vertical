@@ -20,6 +20,7 @@ import {
   PROJECTS,
   CONNECT,
 } from "./data/portfolioData";
+import { PillarsContainer } from "./components/pillars";
 import "./index.css";
 
 void motion;
@@ -590,6 +591,10 @@ export default function Portfolio() {
             ))}
           </div>
         </div>
+      </Section>
+
+      <Section id="pillars" title="4 pillars of vatsal" reducedMotion={reducedMotion} density="feature">
+        <PillarsContainer />
       </Section>
 
       <Section id="experience" title="Experience" reducedMotion={reducedMotion} density="regular">

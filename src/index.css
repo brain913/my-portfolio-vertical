@@ -357,10 +357,21 @@ a {
   gap: 0;
   width: fit-content;
   line-height: 0.84;
+  isolation: isolate;
 }
 
-.mv-hero-signature > span {
-  font-family: var(--sans);
+.mv-hero-scramble {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.mv-hero-scramble-line {
+  display: block;
+  font-family: var(--mono);
   font-size: clamp(4.2rem, 16vw, 11rem);
   font-weight: 700;
   letter-spacing: -0.055em;
@@ -368,9 +379,50 @@ a {
   text-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-:root[data-theme="light"] .mv-hero-signature > span {
+:root[data-theme="light"] .mv-hero-scramble-line {
   color: rgba(23, 23, 25, 0.11);
   text-shadow: 0 12px 34px rgba(0, 0, 0, 0.2);
+}
+
+.mv-hero-scramble-line:not(.is-revealed) {
+  color: rgba(255, 106, 43, 0.9);
+  text-shadow: 0 0 20px rgba(255, 106, 43, 0.35);
+}
+
+:root[data-theme="light"] .mv-hero-scramble-line:not(.is-revealed) {
+  color: rgba(74, 55, 40, 0.52);
+  text-shadow: 0 0 18px rgba(74, 55, 40, 0.18);
+}
+
+.mv-hero-scramble-line.is-revealed {
+  color: rgba(255, 255, 255, 0.14);
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="light"] .mv-hero-scramble-line.is-revealed {
+  color: rgba(23, 23, 25, 0.11);
+  text-shadow: 0 12px 34px rgba(0, 0, 0, 0.2);
+}
+
+.mv-hero-scramble-char {
+  display: inline-block;
+  min-width: 0.62em;
+  font-family: var(--mono);
+}
+
+.mv-hero-scramble-char.is-revealed {
+  color: rgba(116, 111, 104, 0.82);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme="light"] .mv-hero-scramble-char.is-revealed {
+  color: rgba(96, 90, 84, 0.82);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+.mv-hero-scramble-space {
+  display: inline-block;
+  width: 0.32em;
 }
 
 .mv-hero-portrait-wrap {
@@ -381,6 +433,7 @@ a {
   height: clamp(86px, 12vw, 138px);
   border-radius: 999px;
   transform: translateY(-50%);
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -1389,7 +1442,7 @@ video {
     flex-direction: column;
   }
 
-  .mv-hero-signature > span {
+  .mv-hero-scramble-line {
     font-size: clamp(3.2rem, 22vw, 6rem);
   }
 

@@ -70,6 +70,39 @@ const VIDEO_LOADING_LINES = [
   "Setting up the preview...",
 ];
 
+const SCRAMBLE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?><";
+const SCRAMBLE_DURATION = 1500;
+const SCRAMBLE_GAP = 0.06;
+const SCRAMBLE_TRAIL_LENGTH = 10;
+
+function createSeededRandom(seed) {
+  let value = seed % 2147483647;
+
+  return () => {
+    value = (value * 48271) % 2147483647;
+    return (value - 1) / 2147483646;
+  };
+}
+
+function createScrambleTrail(target, seed) {
+  const random = createSeededRandom(seed + indexFromText(target));
+  const trail = [];
+  let previous = "";
+
+  while (trail.length < SCRAMBLE_TRAIL_LENGTH) {
+    const nextCharacter = SCRAMBLE_POOL[Math.floor(random() * SCRAMBLE_POOL.length)];
+
+    if (nextCharacter === previous) {
+      continue;
+    }
+
+    trail.push(nextCharacter);
+    previous = nextCharacter;
+  }
+
+  return trail;
+}
+
 function indexFromText(text) {
   let hash = 0;
   for (let i = 0; i < text.length; i += 1) {
@@ -91,6 +124,64 @@ function logoForItem(item) {
   } catch {
     return "";
   }
+}
+
+function ScrambleLine({ text, reducedMotion, seed }) {
+  const [progress, setProgress] = useState(reducedMotion ? 1 : 0);
+  const characters = Array.from(text);
+  const trails = useMemo(
+    () => characters.map((character, index) => (
+      character === " " ? [] : createScrambleTrail(character, seed * 97 + index * 31)
+    )),
+    [characters, seed],
+  );
+
+  useEffect(() => {
+    if (reducedMotion) {
+      return undefined;
+    }
+
+    let frameId = 0;
+    const startedAt = window.performance.now();
+
+    const tick = (now) => {
+      const nextProgress = Math.min(1, (now - startedAt) / SCRAMBLE_DURATION);
+      setProgress(nextProgress);
+
+      if (nextProgress < 1) {
+        frameId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [reducedMotion]);
+
+  return (
+    <span className="mv-hero-scramble-line" aria-hidden="true">
+      {characters.map((character, index) => {
+        if (character === " ") {
+          return (
+            <span key={`${text}-${index}`} className="mv-hero-scramble-space">
+              &nbsp;
+            </span>
+          );
+        }
+
+        const revealEnd = Math.min(1, 0.58 + index * SCRAMBLE_GAP + ((seed + index) % 3) * 0.02);
+        const shouldReveal = progress >= revealEnd;
+        const trail = trails[index];
+        const trailIndex = Math.min(trail.length - 1, Math.floor(progress * (trail.length - 1)));
+
+        return (
+          <span key={`${text}-${index}`} className={`mv-hero-scramble-char ${shouldReveal ? "is-revealed" : ""}`}>
+            {shouldReveal ? character : trail[trailIndex]}
+          </span>
+        );
+      })}
+    </span>
+  );
 }
 
 function MediaCard({ item }) {
@@ -276,6 +367,12 @@ export default function Portfolio() {
       href: "https://github.com/brain913",
       site: "https://github.com",
     },
+    {
+      label: "Google Dev",
+      handle: "g.dev/brain913",
+      href: "https://g.dev/brain913",
+      site: "https://g.dev",
+    },
   ];
 
   useEffect(() => {
@@ -409,8 +506,10 @@ export default function Portfolio() {
         <div className="mv-wrap">
           <div className="mv-hero-top">
             <h1 className="mv-hero-signature" aria-label="Vatsal Mehta">
-              <span>Vatsal</span>
-              <span>Mehta</span>
+              <span className="mv-hero-scramble" aria-hidden="true">
+                <ScrambleLine text="Vatsal" reducedMotion={reducedMotion} seed={1} />
+                <ScrambleLine text="Mehta" reducedMotion={reducedMotion} seed={2} />
+              </span>
               <span className="mv-hero-portrait-wrap" aria-hidden="true">
                 <img src={IMG.profile} alt="" className="mv-hero-portrait" loading="eager" />
               </span>
@@ -650,12 +749,12 @@ export default function Portfolio() {
           <motion.a
             className="mv-contact-email"
             variants={contactItem}
-            href="mailto:vatsalplayzforever@gmail.com"
+            href="mailto:mvatsal680@gmail.com"
             whileHover={reducedMotion ? {} : { x: 4 }}
             whileTap={reducedMotion ? {} : { scale: 0.99 }}
             transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.23, 1, 0.32, 1] }}
           >
-            vatsalplayzforever@gmail.com
+            mvatsal680@gmail.com
           </motion.a>
 
           <motion.div className="mv-contact-pills" variants={contactItem}>

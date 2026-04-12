@@ -153,8 +153,7 @@ export const EXPERIENCE = [
 ];
 
 export const EDUCATION = [
-  { school: "University of New South Wales", link: "#", role: "Bachelor of Computer Science / Law", period: "Upcoming"  },
-  { school: "Blacktown Boys High School",    link: "#", role: "Student",                            period: "2020-2025" },
+  { school: "Blacktown Boys High School",    link: "#", role: "Student",                            period: "2023-2026" },
   { school: "Quakers Hill Public School",    link: "#", role: "Advanced & OC streams",              period: "2016-2022" },
 ];
 
@@ -167,8 +166,6 @@ export const CERTIFICATES = [
   { name: "Machine Learning Crash Course: Classification",      issuer: "Google", year: "2025", link: "#" },
   { name: "Machine Learning Crash Course: Logistic Regression", issuer: "Google", year: "2025", link: "#" },
   { name: "Machine Learning Crash Course: Linear Regression",   issuer: "Google", year: "2025", link: "#" },
-  { name: "I/O 2025 - Registered",                              issuer: "Google", year: "2025", link: "#" },
-  { name: "Joined the Google Developer Program",                issuer: "Google", year: "2025", link: "#" },
 ];
 
 export const REFERENCES = [
@@ -251,7 +248,7 @@ export const CONNECT = [
   { label: "Discord",     val: "brain913",                     icon: "chat", href: "https://discord.com/users/767977600915734530"     },
   { label: "WhatsApp",    val: "Vatsal Mehta",                  icon: "msg",  href: "https://web.whatsapp.com/send/?phone=61493444893" },
   { label: "LinkedIn",    val: "Vatsal Mehta",                  icon: "work", href: "https://linkedin.com/in/brain913"                 },
-  { label: "Email",       val: "vatsalplayzforever@gmail.com",  icon: "mail", href: "mailto:vatsalplayzforever@gmail.com"              },
+  { label: "Email",       val: "mvatsal680@gmail.com",         icon: "mail", href: "mailto:mvatsal680@gmail.com"                 },
   { label: "Book a Call", val: "cal.com/brain913",              icon: "cal",  href: "https://cal.com/brain913"                         },
 ];
 
@@ -262,7 +259,7 @@ export const CONNECT_ICONS = {
 export const CMD_ITEMS = [
   { section: "Actions", label: "Print Resume", icon: "print", hotkey: "Ctrl+P", action: () => window.print() },
   { section: "Social",  label: "LinkedIn",     icon: "work",  hotkey: "Ctrl+L", action: () => window.open("https://linkedin.com/in/brain913","_blank") },
-  { section: "Social",  label: "Email",        icon: "mail",  hotkey: "Ctrl+E", action: () => { window.location.href = "mailto:vatsalplayzforever@gmail.com"; } },
+  { section: "Social",  label: "Email",        icon: "mail",  hotkey: "Ctrl+E", action: () => { window.location.href = "mailto:mvatsal680@gmail.com"; } },
   { section: "Social",  label: "Instagram",    icon: "pic",   hotkey: "",       action: () => window.open("https://instagram.com/brain913","_blank") },
   { section: "Coding",  label: "GitHub",       icon: "code",  hotkey: "",       action: () => window.open("https://github.com/brain913","_blank") },
 ];

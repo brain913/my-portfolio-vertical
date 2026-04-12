@@ -1,7 +1,7 @@
 /* portfolioData.js - single source of truth for all portfolio content */
 
 export const IMG = {
-  profile:      "/gallery/profile_new.jpg",
+  profile:      "/gallery/profile_new.png",
   accelrtLogo:  "https://framerusercontent.com/images/TSAli1ZEa27c4TP04Bm7UQIUQ.png?scale-down-to=512",
   accelrtSite:  "https://framerusercontent.com/images/e0UVnUVjKLv5Ml8kJ5dRPMFf73Q.png",
   roboticsLogo: "https://framerusercontent.com/images/cuIo4eVBHbM00xXLX8JGOsgtUo.jpg?scale-down-to=512",

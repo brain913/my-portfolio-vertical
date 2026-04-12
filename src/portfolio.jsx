@@ -525,7 +525,7 @@ export default function Portfolio() {
             </span>
           </p>
           <p className="mv-copy">
-            Year 10 at BBHS. I organise hackathons, compete in robotics, serve coffee, and
+            Year 10 at BBHS. I organise hackathons, compete in robotics, and
             explore technology and finance. I care about doing things properly and adding real value.
           </p>
           <div className="mv-hero-cta">

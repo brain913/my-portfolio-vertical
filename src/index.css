@@ -200,7 +200,10 @@ a {
 }
 
 .mv-wrap {
-  width: min(1080px, calc(100% - 40px));
+  width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
+  max-width: 1120px;
   margin: 0 auto;
 }
 

@@ -260,6 +260,7 @@ export const PILLARS = [
   {
     id: "student",
     title: "Student",
+    proof: "Balances academics with high-accountability STEM events and long-term consistency.",
     cards: [
       {
         label: "Profile",
@@ -281,6 +282,7 @@ export const PILLARS = [
   {
     id: "legal-thinker",
     title: "Legal Thinker",
+    proof: "Builds structured arguments through mock trial, heavy reading, and disciplined preparation.",
     cards: [
       {
         label: "Mock Trial",
@@ -302,6 +304,7 @@ export const PILLARS = [
   {
     id: "tech-builder",
     title: "Tech Builder",
+    proof: "Ships practical prototypes, iterates fast, and competes in robotics under pressure.",
     cards: [
       {
         label: "Robotics",
@@ -322,7 +325,8 @@ export const PILLARS = [
   },
   {
     id: "side-quest-operator",
-    title: "Side-Quest Operator",
+    title: "Side Quester",
+    proof: "Builds team chemistry and reliable collaboration through real-world community leadership.",
     cards: [
       {
         label: "Hangout 03",

@@ -20,6 +20,14 @@ If you are developing a production application, we recommend using TypeScript wi
 
 -----------------------------------------------------------------------------------------------------------------------------------------
 
-Fully designed with Claude AI
+Designed with the help of Claude and GitHub Copilot
+
+Tried shifting off from Framer to Actual Code which has led me here
+
+Hon mentions
+mehtavatsal.dev for design inspiration
+ontikreza.framer.website for the folder hover and timeline which i incorporated into mine
 
 its a portfolio site which was based off my old framer site
+
+This will get actively updated in the holidays

@@ -38,6 +38,46 @@ export const STATS = [
   { label: "City2Surf",                sub: "Volunteer",                      val: "Completed"   },
 ];
 
+export const STORY_TIMELINE = [
+  {
+    period: "2023-Now",
+    title: "Sidequesting + Resume maxxing",
+    items: [
+      "Harvard CS50x",
+      "FIRST Robotics Nationals Unearthed Season FLL",
+      "Organised Australia's largest high school hackathon @ UNSW",
+      "Completed Google's ML basics course",
+      "Coffee club",
+      "Debating Club in yr 8",
+      "Mock Trial - yr 9 & 10",
+      "ASX Sharemarket game",
+      "Everest Program at BBHS",
+      "APSMO top 15%",
+    ],
+  },
+  {
+    period: "2021-23",
+    title: "Out of my shell",
+    items: [
+      "OC Quakers Hill",
+      "Premiers Speaking Challenge",
+      "Robotics Club",
+      "APSMO top 15%",
+      "Library Monitor",
+    ],
+  },
+  {
+    period: "2010-21",
+    title: "Hittin the books.",
+    items: [
+      "ICAS top 10% technology, science, comprehension, maths",
+      "ICAS top 25% writing",
+      "Premiers Reading Challenge",
+      "Diamond - Gifted Class",
+    ],
+  },
+];
+
 export const EXPERIENCE = [
   {
     featured: true,

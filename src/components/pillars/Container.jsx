@@ -1,8 +1,9 @@
+import { memo } from "react";
 import { useReducedMotion } from "framer-motion";
 import { PILLARS } from "../../data/portfolioData";
 import PillarFolder from "./Folder";
 
-export default function PillarsContainer() {
+function PillarsContainer() {
   const reducedMotion = useReducedMotion();
 
   return (
@@ -22,3 +23,5 @@ export default function PillarsContainer() {
     </div>
   );
 }
+
+export default memo(PillarsContainer);

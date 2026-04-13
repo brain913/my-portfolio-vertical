@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { motion } from "framer-motion";
 import { EA, SP } from "../../animations";
 
 void motion;
 
-export default function PillarCard({ card, index, isOpen, reducedMotion, totalCards = 3, fanMode = "center", launchOrder = index }) {
+function PillarCard({ card, index, isOpen, reducedMotion, totalCards = 3, fanMode = "center", launchOrder = index }) {
   const [imageFailed, setImageFailed] = useState(false);
   const centerIndex = (totalCards - 1) / 2;
   const relativeOffset = index - centerIndex;
@@ -44,7 +44,6 @@ export default function PillarCard({ card, index, isOpen, reducedMotion, totalCa
         scale: reducedMotion ? 1 : [0.82, 1.06, 1],
         opacity: 1,
         zIndex: 30 + index,
-        boxShadow: openDepthShadow,
       } : {
         x: reducedMotion ? 0 : closedX,
         y: reducedMotion ? 0 : closedY,
@@ -52,7 +51,6 @@ export default function PillarCard({ card, index, isOpen, reducedMotion, totalCa
         scale: 0.82,
         opacity: 0.9,
         zIndex: 1 + index,
-        boxShadow: "none",
       }}
       transition={reducedMotion ? { duration: 0 } : {
         delay: isOpen ? launchOrder * 0.055 : 0,
@@ -81,6 +79,8 @@ export default function PillarCard({ card, index, isOpen, reducedMotion, totalCa
           src={card.src}
           alt={card.alt}
           loading="lazy"
+          decoding="async"
+          fetchPriority="low"
           onError={() => setImageFailed(true)}
           className="h-[calc(100%-1.25rem)] w-full rounded-[6px] object-cover object-center"
           style={{ background: "#222", display: "block" }}
@@ -92,3 +92,5 @@ export default function PillarCard({ card, index, isOpen, reducedMotion, totalCa
     </motion.figure>
   );
 }
+
+export default memo(PillarCard);

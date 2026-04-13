@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { motion } from "framer-motion";
 import { EA } from "../../animations";
 import PillarCard from "./Card";
 
 void motion;
 
-export default function PillarFolder({ pillar, index, reducedMotion }) {
+function PillarFolder({ pillar, index, reducedMotion }) {
   const [isPinnedOpen, setIsPinnedOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -133,3 +133,5 @@ export default function PillarFolder({ pillar, index, reducedMotion }) {
     </motion.article>
   );
 }
+
+export default memo(PillarFolder);

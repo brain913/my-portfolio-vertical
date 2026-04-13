@@ -19,6 +19,7 @@ import {
   GALLERY,
   PROJECTS,
   CONNECT,
+  STORY_TIMELINE,
 } from "./data/portfolioData";
 import { PillarsContainer } from "./components/pillars";
 import "./index.css";
@@ -75,6 +76,46 @@ const SCRAMBLE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?><";
 const SCRAMBLE_DURATION = 1500;
 const SCRAMBLE_GAP = 0.06;
 const SCRAMBLE_TRAIL_LENGTH = 10;
+const MAX_RENDER_ITEMS = 240;
+const MAX_TICKER_ITEMS = 100;
+const FALLBACK_LOCALE = "en-US";
+
+function toArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function capItems(value, limit = MAX_RENDER_ITEMS) {
+  const items = toArray(value);
+  if (items.length <= limit) {
+    return { items, total: items.length, truncated: false };
+  }
+  return {
+    items: items.slice(0, limit),
+    total: items.length,
+    truncated: true,
+  };
+}
+
+function safeText(value, fallback = "Unavailable") {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : fallback;
+}
+
+function safeHref(value, fallback = "#") {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : fallback;
+}
+
+function isExternalLink(href) {
+  return /^https?:\/\//i.test(href) || href.startsWith("mailto:");
+}
 
 function createSeededRandom(seed) {
   let value = seed % 2147483647;
@@ -185,20 +226,51 @@ function ScrambleLine({ text, reducedMotion, seed }) {
   );
 }
 
+function SectionNotice({ children, tone = "neutral" }) {
+  return (
+    <p className={`mv-section-note ${tone === "neutral" ? "" : `is-${tone}`}`.trim()} role="status" aria-live="polite">
+      {children}
+    </p>
+  );
+}
+
+function SafeIcon({ src, alt = "", className = "", decorative = true }) {
+  const [failed, setFailed] = useState(!src);
+
+  if (failed) {
+    return <span className={`mv-icon-fallback ${className}`.trim()} aria-hidden="true">•</span>;
+  }
+
+  return (
+    <img
+      src={src}
+      alt={decorative ? "" : alt}
+      aria-hidden={decorative ? "true" : undefined}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+      className={className}
+    />
+  );
+}
+
 function MediaCard({ item }) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
-  const normalizedSrc = item.src.startsWith("/gallery/")
-    ? item.src.replace(/ /g, "%20")
-    : item.src;
-  const src = failed ? IMG.profile : normalizedSrc;
+  const label = safeText(item?.label, "Gallery item");
+  const caption = safeText(item?.caption, "No caption available yet.");
+  const rawSrc = typeof item?.src === "string" ? item.src : "";
+  const normalizedSrc = rawSrc.startsWith("/gallery/")
+    ? rawSrc.replace(/ /g, "%20")
+    : rawSrc;
+  const src = failed || !normalizedSrc ? IMG.profile : normalizedSrc;
 
   return (
     <figure className={`mv-media-card ${loaded ? "is-loaded" : ""} ${failed ? "is-failed" : ""}`}>
       {!loaded && !failed ? <div className="mv-media-loading" aria-hidden="true" /> : null}
       <img
         src={src}
-        alt={item.label}
+        alt={label}
         loading="lazy"
         decoding="async"
         onLoad={() => setLoaded(true)}
@@ -208,8 +280,8 @@ function MediaCard({ item }) {
         }}
       />
       <figcaption>
-        <p>{item.label}</p>
-        <span>{item.caption}</span>
+        <p dir="auto">{label}</p>
+        <span dir="auto">{caption}</span>
         {failed ? <small>Original image unavailable. Showing fallback.</small> : null}
       </figcaption>
     </figure>
@@ -264,30 +336,60 @@ function LazyVideo({ src, label }) {
   const videoContainerRef = useRef(null);
   const [videoFailed, setVideoFailed] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [videoSlow, setVideoSlow] = useState(false);
+  const safeLabel = safeText(label, "Project preview");
+  const safeSrc = typeof src === "string" ? src : "";
   const loadingLine = useMemo(() => {
-    const idx = indexFromText(label) % VIDEO_LOADING_LINES.length;
+    const idx = indexFromText(safeLabel) % VIDEO_LOADING_LINES.length;
     return VIDEO_LOADING_LINES[idx];
-  }, [label]);
+  }, [safeLabel]);
   const shouldLoad = useInView(videoContainerRef, {
     once: true,
     margin: "350px 0px 350px 0px",
   });
 
+  useEffect(() => {
+    if (!shouldLoad || videoReady || videoFailed) {
+      return undefined;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setVideoSlow(true);
+    }, 8000);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [shouldLoad, videoReady, videoFailed]);
+
   return (
     <div ref={videoContainerRef} className="mv-video-shell">
-      {!shouldLoad ? <p className="mv-media-note">{loadingLine}</p> : null}
+      {!safeSrc ? <p className="mv-media-note">Project preview unavailable for this item.</p> : null}
+      {!shouldLoad && safeSrc ? <p className="mv-media-note">{loadingLine}</p> : null}
       <video
-        src={shouldLoad ? src : undefined}
+        src={shouldLoad && safeSrc ? safeSrc : undefined}
         autoPlay
         loop
         muted
         preload="none"
         playsInline
-        aria-label={label}
-        onCanPlay={() => setVideoReady(true)}
-        onError={() => setVideoFailed(true)}
+        aria-label={safeLabel}
+        onCanPlay={() => {
+          setVideoReady(true);
+          setVideoSlow(false);
+        }}
+        onError={() => {
+          setVideoFailed(true);
+          setVideoSlow(false);
+        }}
+        onWaiting={() => {
+          if (!videoReady) {
+            setVideoSlow(true);
+          }
+        }}
       />
-      {shouldLoad && !videoReady && !videoFailed ? <p className="mv-media-note">Loading preview. This may take a moment.</p> : null}
+      {shouldLoad && safeSrc && !videoReady && !videoFailed ? <p className="mv-media-note">Loading preview. This may take a moment.</p> : null}
+      {videoSlow && !videoReady && !videoFailed ? <p className="mv-media-note">Slow network detected. Video may take longer to start.</p> : null}
       {videoFailed ? <p className="mv-media-note">Preview unavailable right now. Try reloading if it stays blank.</p> : null}
     </div>
   );
@@ -317,30 +419,76 @@ export default function Portfolio() {
   const [heroText, setHeroText] = useState(reducedMotion ? HERO_TITLES[0] : "");
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroDeleting, setHeroDeleting] = useState(false);
+  const [locale] = useState(() => (
+    typeof navigator !== "undefined"
+      ? safeText(navigator.language, FALLBACK_LOCALE)
+      : FALLBACK_LOCALE
+  ));
+  const [isOffline, setIsOffline] = useState(
+    () => (typeof window !== "undefined" ? !window.navigator.onLine : false),
+  );
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
 
-  const featuredProjects = useMemo(() => EXPERIENCE.filter((item) => item.featured), []);
-  const heroQuickLinks = useMemo(
-    () => CONNECT.filter((item) => item.label === "Email" || item.label === "LinkedIn"),
+  const featuredProjects = useMemo(
+    () => capItems(toArray(EXPERIENCE).filter((item) => item && item.featured)),
     [],
+  );
+  const experienceEntries = useMemo(() => capItems(toArray(EXPERIENCE)), []);
+  const educationEntries = useMemo(() => capItems(toArray(EDUCATION), 120), []);
+  const certificateEntries = useMemo(() => capItems(toArray(CERTIFICATES), 160), []);
+  const referenceEntries = useMemo(() => capItems(toArray(REFERENCES), 120), []);
+  const skillEntries = useMemo(() => capItems(toArray(SKILLS), MAX_RENDER_ITEMS), []);
+  const galleryEntries = useMemo(() => capItems(toArray(GALLERY), MAX_RENDER_ITEMS), []);
+  const projectEntries = useMemo(() => capItems(toArray(PROJECTS), 120), []);
+  const statEntries = useMemo(() => capItems(toArray(STATS), 120), []);
+  const connectEntries = useMemo(() => capItems(toArray(CONNECT), 40), []);
+  const storyEntries = useMemo(() => capItems(toArray(STORY_TIMELINE), 20), []);
+
+  const heroQuickLinks = useMemo(
+    () => capItems(
+      connectEntries.items.filter(
+        (item) => item && (item.label === "Email" || item.label === "LinkedIn"),
+      ),
+      6,
+    ),
+    [connectEntries],
   );
   const techStackGroups = useMemo(
     () => TECH_STACK_GROUPS.map((group) => ({
       ...group,
-      items: SKILLS.filter((item) => group.names.includes(item.name)),
+      items: skillEntries.items.filter((item) => item && group.names.includes(item.name)),
     })),
-    [],
+    [skillEntries],
+  );
+  const tickerSkills = useMemo(
+    () => capItems(skillEntries.items, MAX_TICKER_ITEMS),
+    [skillEntries],
   );
   const groupedGallery = useMemo(() => {
     const groups = new Map();
-    GALLERY.forEach((item) => {
-      if (!groups.has(item.label)) {
-        groups.set(item.label, []);
+    galleryEntries.items.forEach((item, itemIndex) => {
+      const bucketLabel = safeText(item?.label, `Collection ${itemIndex + 1}`);
+      if (!groups.has(bucketLabel)) {
+        groups.set(bucketLabel, []);
       }
-      groups.get(item.label).push(item);
+      groups.get(bucketLabel).push(item);
     });
 
     return Array.from(groups.entries()).map(([label, items]) => ({ label, items }));
-  }, []);
+  }, [galleryEntries]);
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(locale || FALLBACK_LOCALE),
+    [locale],
+  );
+  const pluralRules = useMemo(
+    () => new Intl.PluralRules(locale || FALLBACK_LOCALE),
+    [locale],
+  );
+  const formatCount = (count, singular, plural) => {
+    const safeCount = Number.isFinite(count) && count >= 0 ? count : 0;
+    const noun = pluralRules.select(safeCount) === "one" ? singular : plural;
+    return `${numberFormatter.format(safeCount)} ${noun}`;
+  };
   const contactContainer = {
     hidden: { opacity: 0, y: reducedMotion ? 0 : 16 },
     show: {
@@ -375,6 +523,9 @@ export default function Portfolio() {
       site: "https://g.dev",
     },
   ];
+  const bookCallHref = safeHref("https://cal.com/brain913", "#contact");
+  const bookCallExternal = isExternalLink(bookCallHref);
+  const emailHref = safeHref("mailto:mvatsal680@gmail.com", "#contact");
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -385,6 +536,31 @@ export default function Portfolio() {
     document.documentElement.style.colorScheme = theme;
     window.localStorage.setItem("mv-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (typeof document !== "undefined" && !document.documentElement.lang) {
+      document.documentElement.lang = locale;
+    }
+  }, [locale]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.navigator) {
+      return undefined;
+    }
+
+    const syncOfflineState = () => {
+      setIsOffline(!window.navigator.onLine);
+    };
+
+    syncOfflineState();
+    window.addEventListener("online", syncOfflineState);
+    window.addEventListener("offline", syncOfflineState);
+
+    return () => {
+      window.removeEventListener("online", syncOfflineState);
+      window.removeEventListener("offline", syncOfflineState);
+    };
+  }, []);
 
   useEffect(() => {
     if (reducedMotion || typeof window === "undefined") {
@@ -463,7 +639,7 @@ export default function Portfolio() {
   }, [heroDeleting, heroIndex, heroText, reducedMotion]);
 
   return (
-    <main className="mv-root">
+    <main className="mv-root" lang={locale}>
       <a className="mv-skip-link" href="#projects">Skip to projects</a>
       <motion.div
         aria-hidden="true"
@@ -503,6 +679,12 @@ export default function Portfolio() {
         </div>
       </header>
 
+      {isOffline ? (
+        <p className="mv-status-banner" role="status" aria-live="polite">
+          You are offline. External links and media may be unavailable until your connection is restored.
+        </p>
+      ) : null}
+
       <section id="hero" className="mv-hero">
         <div className="mv-wrap">
           <div className="mv-hero-top">
@@ -512,7 +694,17 @@ export default function Portfolio() {
                 <ScrambleLine text="Mehta" reducedMotion={reducedMotion} seed={2} />
               </span>
               <span className="mv-hero-portrait-wrap" aria-hidden="true">
-                <img src={IMG.profile} alt="" className="mv-hero-portrait" loading="eager" />
+                {profileImageFailed ? (
+                  <span className="mv-hero-portrait-fallback">VM</span>
+                ) : (
+                  <img
+                    src={IMG.profile}
+                    alt=""
+                    className="mv-hero-portrait"
+                    loading="eager"
+                    onError={() => setProfileImageFailed(true)}
+                  />
+                )}
               </span>
             </h1>
             <span className="mv-scroll-hint">Scroll</span>
@@ -529,46 +721,71 @@ export default function Portfolio() {
             Year 10 at BBHS. I organise hackathons, compete in robotics, and
             explore technology and finance. I care about doing things properly and adding real value.
           </p>
-          <div className="mv-hero-cta">
-            {heroQuickLinks.map((item) => (
-              <a key={item.label} href={item.href} target="_blank" rel="noreferrer">
-                <img
-                  src={logoForItem({ site: item.href, logo: CONNECT_LOGOS[item.label] })}
-                  alt=""
-                  aria-hidden="true"
-                />
-                {item.label}
-              </a>
-            ))}
-          </div>
+          {heroQuickLinks.items.length ? (
+            <div className="mv-hero-cta">
+              {heroQuickLinks.items.map((item) => {
+                const href = safeHref(item?.href, "#contact");
+                const external = isExternalLink(href);
+
+                return (
+                  <a key={safeText(item?.label, href)} href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined}>
+                    <SafeIcon src={logoForItem({ site: href, logo: CONNECT_LOGOS[item?.label] })} />
+                    <span dir="auto">{safeText(item?.label, "Contact")}</span>
+                  </a>
+                );
+              })}
+            </div>
+          ) : (
+            <SectionNotice>No quick links are available right now.</SectionNotice>
+          )}
+          {heroQuickLinks.truncated ? (
+            <SectionNotice tone="warning">
+              Showing the first {numberFormatter.format(heroQuickLinks.items.length)} links to keep this section fast.
+            </SectionNotice>
+          ) : null}
         </div>
       </section>
 
       <Section id="projects" title="Projects" reducedMotion={reducedMotion} density="feature">
         <div className="mv-project-list">
-          {featuredProjects.map((item, index) => (
-            <details key={`${item.company}-${item.period}`} className="mv-project" open={index === 0}>
-              <summary>
-                <span className="mv-index">{String(index + 1).padStart(2, "0")}</span>
-                <span className="mv-title">{item.role} - {item.company}</span>
-                <span className="mv-plus">+</span>
-              </summary>
-              <div className="mv-project-content">
-                <p>{item.summary}</p>
-                <ul>
-                  {item.achievements.map((achievement) => (
-                    <li key={achievement}>{achievement}</li>
-                  ))}
-                </ul>
-                <div className="mv-meta-row">
-                  <span>{item.impact}</span>
-                  <span>{item.scope}</span>
-                  <span>{item.period}</span>
+          {featuredProjects.items.length ? featuredProjects.items.map((item, index) => {
+            const achievements = capItems(toArray(item?.achievements), 14);
+
+            return (
+              <details key={`${safeText(item?.company, "org")}-${safeText(item?.period, String(index))}`} className="mv-project" open={index === 0}>
+                <summary>
+                  <span className="mv-index">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="mv-title" dir="auto">{safeText(item?.role, "Untitled Role")} - {safeText(item?.company, "Unknown")}</span>
+                  <span className="mv-plus">+</span>
+                </summary>
+                <div className="mv-project-content">
+                  <p dir="auto">{safeText(item?.summary, "Project summary unavailable.")}</p>
+                  {achievements.items.length ? (
+                    <ul>
+                      {achievements.items.map((achievement, achievementIndex) => (
+                        <li key={`${safeText(item?.company, "org")}-${achievementIndex}`} dir="auto">{safeText(achievement, "Achievement unavailable")}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <SectionNotice>No achievement bullets available for this project yet.</SectionNotice>
+                  )}
+                  <div className="mv-meta-row">
+                    <span dir="auto">{safeText(item?.impact, "Impact pending")}</span>
+                    <span dir="auto">{safeText(item?.scope, "Scope pending")}</span>
+                    <span dir="auto">{safeText(item?.period, "Date pending")}</span>
+                  </div>
                 </div>
-              </div>
-            </details>
-          ))}
+              </details>
+            );
+          }) : (
+            <SectionNotice>No featured projects available yet.</SectionNotice>
+          )}
         </div>
+        {featuredProjects.truncated ? (
+          <SectionNotice tone="warning">
+            Showing the first {numberFormatter.format(featuredProjects.items.length)} of {numberFormatter.format(featuredProjects.total)} featured projects.
+          </SectionNotice>
+        ) : null}
       </Section>
 
       <Section id="about" title="About" reducedMotion={reducedMotion} density="feature">
@@ -576,7 +793,7 @@ export default function Portfolio() {
           I build systems that make sense of data and opportunities that most people skip.
         </blockquote>
         <p className="mv-copy">
-          I am currently {TYPING.join(" ")} Growth mindset, adaptability, and a commitment
+          I am currently {toArray(TYPING).join(" ")} Growth mindset, adaptability, and a commitment
           to achieve my goals while adding value through dedication and results.
         </p>
         <p className="mv-copy">
@@ -584,13 +801,59 @@ export default function Portfolio() {
           I focus on showing up consistently, handling pressure well, and finishing what I start.
         </p>
 
-        <div className="mv-ticker" aria-hidden="true">
-          <div className="mv-ticker-track">
-            {SKILLS.concat(SKILLS).map((item, idx) => (
-              <span key={`${item.name}-${idx}`}>{item.name}</span>
-            ))}
+        {tickerSkills.items.length ? (
+          <div className="mv-ticker" aria-hidden="true">
+            <div className="mv-ticker-track">
+              {tickerSkills.items.concat(tickerSkills.items).map((item, idx) => (
+                <span key={`${safeText(item?.name, "skill")}-${idx}`} dir="auto">{safeText(item?.name, "Skill")}</span>
+              ))}
+            </div>
           </div>
+        ) : (
+          <SectionNotice>Skills will appear here once available.</SectionNotice>
+        )}
+        {tickerSkills.truncated ? (
+          <SectionNotice tone="warning">
+            Ticker limited to {numberFormatter.format(tickerSkills.items.length)} items for smooth performance.
+          </SectionNotice>
+        ) : null}
+      </Section>
+
+      <Section id="story" title="my story" reducedMotion={reducedMotion} density="feature" deferContent={false}>
+        <p className="mv-story-kicker">trust the process</p>
+        <div className="mv-story-timeline" role="list" aria-label="Timeline from now to the start">
+          {storyEntries.items.length ? storyEntries.items.map((phase, phaseIndex) => {
+            const milestones = capItems(toArray(phase?.items), 14);
+
+            return (
+              <article
+                key={`${safeText(phase?.period, String(phaseIndex))}-${safeText(phase?.title, "phase")}`}
+                className={`mv-story-event ${phaseIndex % 2 === 0 ? "is-right" : "is-left"}`}
+                role="listitem"
+              >
+                <span className="mv-story-node" aria-hidden="true" />
+                <div className="mv-story-panel">
+                  <p className="mv-story-period" dir="auto">{safeText(phase?.period, "Date pending")}</p>
+                  <h3 className="mv-story-title" dir="auto">{safeText(phase?.title, "Milestone")}</h3>
+                  {milestones.items.length ? (
+                    <ul className="mv-story-list">
+                      {milestones.items.map((entry, entryIndex) => (
+                        <li key={`${safeText(phase?.period, "period")}-${entryIndex}`} dir="auto">{safeText(entry, "Milestone pending")}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <SectionNotice>No milestones listed for this phase yet.</SectionNotice>
+                  )}
+                </div>
+              </article>
+            );
+          }) : <SectionNotice>No timeline milestones available yet.</SectionNotice>}
         </div>
+        {storyEntries.truncated ? (
+          <SectionNotice tone="warning">
+            Showing {numberFormatter.format(storyEntries.items.length)} of {numberFormatter.format(storyEntries.total)} timeline phases.
+          </SectionNotice>
+        ) : null}
       </Section>
 
       <Section id="pillars" title="4 pillars of vatsal" reducedMotion={reducedMotion} density="feature">
@@ -599,119 +862,137 @@ export default function Portfolio() {
 
       <Section id="experience" title="Experience" reducedMotion={reducedMotion} density="regular">
         <div className="mv-grid two">
-          {EXPERIENCE.map((item) => (
-            <article key={`${item.company}-${item.period}`} className="mv-card">
-              <h3>{item.role}</h3>
-              <p className="mv-muted">{item.company} - {item.location}</p>
-              <p>{item.summary}</p>
+          {experienceEntries.items.length ? experienceEntries.items.map((item, itemIndex) => (
+            <article key={`${safeText(item?.company, "org")}-${safeText(item?.period, String(itemIndex))}`} className="mv-card">
+              <h3 dir="auto">{safeText(item?.role, "Role unavailable")}</h3>
+              <p className="mv-muted" dir="auto">{safeText(item?.company, "Unknown")} - {safeText(item?.location, "Location pending")}</p>
+              <p dir="auto">{safeText(item?.summary, "Summary unavailable.")}</p>
               <div className="mv-tags">
-                {item.tags.map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
+                {toArray(item?.tags).length ? toArray(item.tags).map((tag, tagIndex) => (
+                  <span key={`${safeText(item?.company, "org")}-${tagIndex}`} dir="auto">{safeText(tag, "Tag")}</span>
+                )) : <span>No tags</span>}
               </div>
             </article>
-          ))}
+          )) : <SectionNotice>No experience entries available yet.</SectionNotice>}
         </div>
+        {experienceEntries.truncated ? (
+          <SectionNotice tone="warning">
+            Showing {numberFormatter.format(experienceEntries.items.length)} of {numberFormatter.format(experienceEntries.total)} entries.
+          </SectionNotice>
+        ) : null}
       </Section>
 
       <Section id="education" title="Education and Certificates" reducedMotion={reducedMotion} density="compact">
         <div className="mv-grid two">
           <article className="mv-card">
             <h3>Education</h3>
-            {EDUCATION.map((item) => (
-              <div className="mv-line mv-line-row" key={`${item.school}-${item.period}`}>
-                <p>{item.school}</p>
-                <span>{item.period}</span>
+            {educationEntries.items.length ? educationEntries.items.map((item, itemIndex) => (
+              <div className="mv-line mv-line-row" key={`${safeText(item?.school, "school")}-${safeText(item?.period, String(itemIndex))}`}>
+                <p dir="auto">{safeText(item?.school, "School unavailable")}</p>
+                <span dir="auto">{safeText(item?.period, "Date pending")}</span>
               </div>
-            ))}
+            )) : <SectionNotice>No education records available yet.</SectionNotice>}
           </article>
           <article className="mv-card">
             <h3>Certificates</h3>
-            {CERTIFICATES.map((item) => (
-              <div className="mv-line mv-line-row" key={`${item.name}-${item.year}`}>
-                <p>{item.name}</p>
-                <span>{item.year}</span>
+            {certificateEntries.items.length ? certificateEntries.items.map((item, itemIndex) => (
+              <div className="mv-line mv-line-row" key={`${safeText(item?.name, "certificate")}-${safeText(item?.year, String(itemIndex))}`}>
+                <p dir="auto">{safeText(item?.name, "Certificate unavailable")}</p>
+                <span dir="auto">{safeText(item?.year, "Date pending")}</span>
               </div>
-            ))}
+            )) : <SectionNotice>No certificates published yet.</SectionNotice>}
           </article>
         </div>
       </Section>
 
       <Section id="references" title="References" reducedMotion={reducedMotion} density="compact">
         <div className="mv-grid two">
-          {REFERENCES.map((item) => (
-            <article className="mv-card" key={item.name}>
-              <h3>{item.name}</h3>
-              <p className="mv-muted">{item.short}</p>
-              <p>{item.text}</p>
+          {referenceEntries.items.length ? referenceEntries.items.map((item, itemIndex) => (
+            <article className="mv-card" key={`${safeText(item?.name, "reference")}-${itemIndex}`}>
+              <h3 dir="auto">{safeText(item?.name, "Reference")}</h3>
+              <p className="mv-muted" dir="auto">{safeText(item?.short, "Short reference unavailable.")}</p>
+              <p dir="auto">{safeText(item?.text, "Reference text unavailable.")}</p>
             </article>
-          ))}
+          )) : <SectionNotice>No references shared yet.</SectionNotice>}
         </div>
       </Section>
 
       <Section id="stack" title="Tech Stack" reducedMotion={reducedMotion} density="compact">
         <div className="mv-stack-groups">
-          {techStackGroups.map((group, groupIndex) => (
+          {techStackGroups.some((group) => group.items.length) ? techStackGroups.map((group, groupIndex) => (
             <details className="mv-stack-group" key={group.title} open={groupIndex === 0}>
               <summary>
-                <span className="mv-stack-title">{group.title}</span>
-                <span className="mv-stack-note">{group.note}</span>
-                <span className="mv-stack-count">{group.items.length} items</span>
+                <span className="mv-stack-title" dir="auto">{safeText(group.title, "Group")}</span>
+                <span className="mv-stack-note" dir="auto">{safeText(group.note, "")}</span>
+                <span className="mv-stack-count">{formatCount(group.items.length, "item", "items")}</span>
               </summary>
               <div className="mv-skill-grid mv-skill-grid-grouped">
-                {group.items.map((item) => (
-                  <a className="mv-skill" key={item.name} href={item.site} target="_blank" rel="noreferrer">
-                    <img src={logoForItem(item)} alt={`${item.name} logo`} loading="lazy" decoding="async" />
-                    <span>{item.name}</span>
-                  </a>
-                ))}
+                {group.items.length ? group.items.map((item, itemIndex) => {
+                  const href = safeHref(item?.site, "#stack");
+                  const external = isExternalLink(href);
+
+                  return (
+                    <a className="mv-skill" key={`${safeText(item?.name, "skill")}-${itemIndex}`} href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined}>
+                      <SafeIcon src={logoForItem(item)} alt={`${safeText(item?.name, "Skill")} logo`} decorative={false} />
+                      <span dir="auto">{safeText(item?.name, "Skill")}</span>
+                    </a>
+                  );
+                }) : <SectionNotice>No tools listed in this group yet.</SectionNotice>}
               </div>
             </details>
-          ))}
+          )) : <SectionNotice>No tech stack entries available yet.</SectionNotice>}
         </div>
+        {skillEntries.truncated ? (
+          <SectionNotice tone="warning">
+            Showing {numberFormatter.format(skillEntries.items.length)} of {numberFormatter.format(skillEntries.total)} tools for performance.
+          </SectionNotice>
+        ) : null}
       </Section>
 
       <Section id="gallery" title="Gallery" reducedMotion={reducedMotion} density="feature">
         <div className="mv-gallery-groups">
-          {groupedGallery.map((group, groupIndex) => (
+          {groupedGallery.length ? groupedGallery.map((group, groupIndex) => (
             <details className="mv-gallery-group" key={group.label} open={groupIndex === 0}>
               <summary>
-                <span className="mv-gallery-title">{group.label}</span>
-                <span className="mv-gallery-count">
-                  {group.items.length} {group.items.length === 1 ? "photo" : "photos"}
-                </span>
+                <span className="mv-gallery-title" dir="auto">{safeText(group.label, "Gallery")}</span>
+                <span className="mv-gallery-count">{formatCount(group.items.length, "photo", "photos")}</span>
               </summary>
               <div className="mv-gallery">
-                {group.items.map((item, idx) => (
-                  <MediaCard item={item} key={`${item.label}-${idx}`} />
-                ))}
+                {group.items.length ? group.items.map((item, idx) => (
+                  <MediaCard item={item} key={`${safeText(item?.label, "media")}-${idx}`} />
+                )) : <SectionNotice>This gallery group is empty.</SectionNotice>}
               </div>
             </details>
-          ))}
+          )) : <SectionNotice>No gallery media available yet.</SectionNotice>}
         </div>
+        {galleryEntries.truncated ? (
+          <SectionNotice tone="warning">
+            Showing {numberFormatter.format(galleryEntries.items.length)} of {numberFormatter.format(galleryEntries.total)} media entries.
+          </SectionNotice>
+        ) : null}
       </Section>
 
       <Section id="media" title="Project Media" reducedMotion={reducedMotion} density="compact">
         <div className="mv-grid two">
-          {PROJECTS.map((item) => (
-            <article className="mv-card" key={item.label}>
-              <h3>{item.label}</h3>
-              <p>{item.caption}</p>
-              <LazyVideo src={item.src} label={item.label} />
+          {projectEntries.items.length ? projectEntries.items.map((item, itemIndex) => (
+            <article className="mv-card" key={`${safeText(item?.label, "project")}-${itemIndex}`}>
+              <h3 dir="auto">{safeText(item?.label, "Project")}</h3>
+              <p dir="auto">{safeText(item?.caption, "No project media caption available.")}</p>
+              <LazyVideo src={item?.src} label={item?.label} />
             </article>
-          ))}
+          )) : <SectionNotice>No project media available yet.</SectionNotice>}
         </div>
       </Section>
 
       <Section id="activity" title="Activity" reducedMotion={reducedMotion} density="compact">
         <div className="mv-grid two">
-          {STATS.map((item) => (
-            <article className="mv-card" key={`${item.label}-${item.sub}`}>
-              <h3>{item.label}</h3>
-              <p className="mv-muted">{item.sub}</p>
-              <p>{item.val}</p>
+          {statEntries.items.length ? statEntries.items.map((item, itemIndex) => (
+            <article className="mv-card" key={`${safeText(item?.label, "stat")}-${itemIndex}`}>
+              <h3 dir="auto">{safeText(item?.label, "Activity")}</h3>
+              <p className="mv-muted" dir="auto">{safeText(item?.sub, "")}</p>
+              <p dir="auto">{safeText(item?.val, "-")}</p>
             </article>
-          ))}
+          )) : <SectionNotice>No activity metrics available yet.</SectionNotice>}
         </div>
       </Section>
 
@@ -741,9 +1022,9 @@ export default function Portfolio() {
           <motion.a
             className="mv-contact-cta"
             variants={contactItem}
-            href="https://cal.com/brain913"
-            target="_blank"
-            rel="noreferrer"
+            href={bookCallHref}
+            target={bookCallExternal ? "_blank" : undefined}
+            rel={bookCallExternal ? "noreferrer" : undefined}
             whileHover={reducedMotion ? {} : { y: -2 }}
             whileTap={reducedMotion ? {} : { scale: 0.98 }}
             transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.23, 1, 0.32, 1] }}
@@ -754,7 +1035,7 @@ export default function Portfolio() {
           <motion.a
             className="mv-contact-email"
             variants={contactItem}
-            href="mailto:mvatsal680@gmail.com"
+            href={emailHref}
             whileHover={reducedMotion ? {} : { x: 4 }}
             whileTap={reducedMotion ? {} : { scale: 0.99 }}
             transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.23, 1, 0.32, 1] }}
@@ -763,21 +1044,27 @@ export default function Portfolio() {
           </motion.a>
 
           <motion.div className="mv-contact-pills" variants={contactItem}>
-            {bottomContactLinks.map((item) => (
-              <motion.a
-                key={item.label}
-                href={item.href}
-                target="_blank"
-                rel="noreferrer"
-                whileHover={reducedMotion ? {} : { y: -2 }}
-                whileTap={reducedMotion ? {} : { scale: 0.97 }}
-                transition={{ duration: reducedMotion ? 0 : 0.18, ease: [0.23, 1, 0.32, 1] }}
-              >
-                <img src={logoForItem({ site: item.site })} alt="" aria-hidden="true" />
-                <span className="mv-contact-pill-label">{item.label}</span>
-                <span className="mv-contact-pill-handle">{item.handle}</span>
-              </motion.a>
-            ))}
+            {bottomContactLinks.map((item) => {
+              const href = safeHref(item?.href, "#contact");
+              const external = isExternalLink(href);
+              const iconSite = safeHref(item?.site, href);
+
+              return (
+                <motion.a
+                  key={safeText(item?.label, href)}
+                  href={href}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noreferrer" : undefined}
+                  whileHover={reducedMotion ? {} : { y: -2 }}
+                  whileTap={reducedMotion ? {} : { scale: 0.97 }}
+                  transition={{ duration: reducedMotion ? 0 : 0.18, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <SafeIcon src={logoForItem({ site: iconSite })} />
+                  <span className="mv-contact-pill-label" dir="auto">{safeText(item?.label, "Link")}</span>
+                  <span className="mv-contact-pill-handle" dir="auto">{safeText(item?.handle, "")}</span>
+                </motion.a>
+              );
+            })}
           </motion.div>
 
           <motion.p className="mv-footnote" variants={contactItem}>

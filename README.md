@@ -29,5 +29,7 @@ mehtavatsal.dev for design inspiration
 ontikreza.framer.website for the folder hover and timeline which i incorporated into mine
 
 its a portfolio site which was based off my old framer site
+brain913.framer.website
+
 
 This will get actively updated in the holidays

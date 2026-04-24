@@ -287,7 +287,7 @@ export const PROJECTS = [
 export const CONNECT = [
   { label: "Discord",     val: "brain913",                     icon: "chat", href: "https://discord.com/users/767977600915734530"     },
   { label: "WhatsApp",    val: "Vatsal Mehta",                  icon: "msg",  href: "https://web.whatsapp.com/send/?phone=61493444893" },
-  { label: "LinkedIn",    val: "Vatsal Mehta",                  icon: "work", href: "https://linkedin.com/in/brain913"                 },
+  { label: "LinkedIn",    val: "Vatsal Mehta",                  icon: "work", href: "https://linkedin.com/in/lsvt"                     },
   { label: "Email",       val: "mvatsal680@gmail.com",         icon: "mail", href: "mailto:mvatsal680@gmail.com"                 },
   { label: "Book a Call", val: "cal.com/brain913",              icon: "cal",  href: "https://cal.com/brain913"                         },
 ];
@@ -389,7 +389,7 @@ export const PILLARS = [
 
 export const CMD_ITEMS = [
   { section: "Actions", label: "Print Resume", icon: "print", hotkey: "Ctrl+P", action: () => window.print() },
-  { section: "Social",  label: "LinkedIn",     icon: "work",  hotkey: "Ctrl+L", action: () => window.open("https://linkedin.com/in/brain913","_blank") },
+  { section: "Social",  label: "LinkedIn",     icon: "work",  hotkey: "Ctrl+L", action: () => window.open("https://linkedin.com/in/lsvt","_blank") },
   { section: "Social",  label: "Email",        icon: "mail",  hotkey: "Ctrl+E", action: () => { window.location.href = "mailto:mvatsal680@gmail.com"; } },
   { section: "Social",  label: "Instagram",    icon: "pic",   hotkey: "",       action: () => window.open("https://instagram.com/brain913","_blank") },
   { section: "Coding",  label: "GitHub",       icon: "code",  hotkey: "",       action: () => window.open("https://github.com/brain913","_blank") },

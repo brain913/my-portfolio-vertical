@@ -32,6 +32,7 @@ const HERO_TITLES = [
   "Builder",
   "Explorer",
   "Organiser",
+  "Side-Quester",
 ];
 
 const TYPE_SPEED = 95;
